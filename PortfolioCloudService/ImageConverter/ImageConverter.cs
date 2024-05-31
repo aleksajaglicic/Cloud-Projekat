@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Common
 {
-    public class ImageConvertes
+    public class ImageConverter
     {
         public static Image ConvertImage(Image img)
         {

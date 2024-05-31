@@ -25,6 +25,7 @@ namespace PortfolioService.Model
             string imgUrl)
         {
             PartitionKey = "User";
+            RowKey = email;
             FirstName = firstName;
             LastName = lastName;
             Address = address;
@@ -34,7 +35,6 @@ namespace PortfolioService.Model
             Email = email;
             Password = password;
             ImgUrl = imgUrl;
-            RowKey = email;
         }
 
         public User() { }

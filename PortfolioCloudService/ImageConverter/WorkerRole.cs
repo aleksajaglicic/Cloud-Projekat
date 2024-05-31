@@ -90,7 +90,7 @@ namespace ImageConverter_WorkerRole
             string uniqueBlobName = string.Format("image_{0}", user.RowKey);
 
             Image image = blobHelper.DownloadImage("userfiles", uniqueBlobName);
-            image = ImageConvertes.ConvertImage(image);
+            image = Common.ImageConverter.ConvertImage(image);
             string thumbnailUrl = blobHelper.UploadImage(image, "userfiles", uniqueBlobName + "thumb");
 
             user.ImgUrl = thumbnailUrl;
