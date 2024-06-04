@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Http;
+using System.Web.Http.Results;
 
 namespace PortfolioService.Controller
 {
@@ -42,11 +43,11 @@ namespace PortfolioService.Controller
                 {
                     if(userLogin.Email.Equals(user.Email) && userLogin.Password.Equals(user.Password))
                     {
-                        return Ok($"Succesfully logged in user: {user.ToString()}");
+                        return Ok($"Successfully logged in user: {user.ToString()}");
                     }
                     else
                     {
-                        return Ok($"Unsuccesfully logged in user: {user.ToString()}");
+                        return Ok($"Unsuccessfully logged in user: {user.ToString()}");
                     }
                 }
                 return Ok($"Successfully logged in user: {user.ToString()}");

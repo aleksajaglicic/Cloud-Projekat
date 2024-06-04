@@ -43,6 +43,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BlobHelper.cs" />
+    <Compile Include="EmailService.cs" />
+    <Compile Include="Interfaces\ICachingService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueueHelper.cs" />
   </ItemGroup>

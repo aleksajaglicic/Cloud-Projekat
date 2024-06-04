@@ -22,11 +22,16 @@ namespace PortfolioService.Controller
 
         [HttpPost]
         [Route("edit")]
-        public IHttpActionResult EditUser([FromBody] string email)
+        public IHttpActionResult EditUser([FromBody] User user)
         {
             try
             {
-                repository.RetrieveUser(email);
+                User _user = repository.RetrieveUser(user.Email);
+                if(_user != null)
+                {
+                    repository.UpdateUser(_user);
+                }
+
                 return Ok("Successfully changed user.");
             }
             catch (Exception ex)
@@ -85,7 +90,7 @@ namespace PortfolioService.Controller
 
                 repository.AddUser(tempUser);
 
-                return Ok("Successfully added user.");
+                return CreatedAtRoute("GetUserById", new { id = tempUser.Email }, "Successfully added user.");
             }
             catch (Exception ex)
             {
@@ -132,13 +137,30 @@ namespace PortfolioService.Controller
         {
             try
             {
-                repository.RetrieveUser(email);
-                return Ok("Successfully changed user.");
+                User user = repository.RetrieveUser(email);
+                return Ok(user);
             }
             catch (Exception ex)
             {
                 return InternalServerError(ex);
             }
         }
+
+        [HttpPost]
+        [Route("checkUser")]
+        public IHttpActionResult CheckUser([FromBody] dynamic data)
+        {
+            try
+            {
+                string email = data.email; // Extract email from JSON object
+                User user = repository.RetrieveUser(email);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
+
     }
 }

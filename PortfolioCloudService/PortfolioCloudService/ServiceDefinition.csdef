@@ -7,16 +7,22 @@
     </ConfigurationSettings>
     <Endpoints>
       <InputEndpoint name="InputData" protocol="http" port="10100" />
+      <InputEndpoint name="health-monitoring" protocol="http" port="10200" />
     </Endpoints>
   </WorkerRole>
   <WorkerRole name="NotificationService" vmsize="Standard_D1_v2">
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
+      <Setting name="DataConnectionString" />
     </ConfigurationSettings>
+    <Endpoints>
+      <InputEndpoint name="health-monitoring" protocol="http" port="10300" />
+    </Endpoints>
   </WorkerRole>
   <WorkerRole name="HealthMonitoringService" vmsize="Standard_D1_v2">
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
+      <Setting name="DataConnectionString" />
     </ConfigurationSettings>
   </WorkerRole>
   <WorkerRole name="ImageConverter" vmsize="Standard_D1_v2">
