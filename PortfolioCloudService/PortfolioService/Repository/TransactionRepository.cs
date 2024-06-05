@@ -10,6 +10,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using PortfolioService.Model;
 using System.Diagnostics;
+using System.Net.Http;
+using System.Net;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace PortfolioService.Repository
 {
@@ -82,13 +86,118 @@ namespace PortfolioService.Repository
         {
             try
             {
-                // Implement logic similar to the Python code here
+                decimal currentCurrencyValue = GetTodaysCurrencyValue(transaction.Currency).Result;
+
+
+                decimal remainingAmount = 600.0M - decimal.Parse(transaction.Amount_paid_dollars);
+
+                if (remainingAmount < 0)
+                {
+                    return false;
+                }
+
+                decimal profit = remainingAmount * currentCurrencyValue;
+
+                ProfitRepository profitRepository = new ProfitRepository();
+                Profit profitRecord = new Profit
+                {
+                    PartitionKey = "Profit",
+                    RowKey = transaction.Currency,
+                    Id = Guid.NewGuid().ToString(), // Generate new ID for the profit record
+                    User_id = transaction.User_id,
+                    Type = profit >= 0 ? TypeProfit.PROFIT : TypeProfit.LOSS,
+                    Summary = (double)Math.Abs(profit),
+                    Net_worth = (double)remainingAmount
+                };
+
+                profitRepository.CreateOrUpdate(profitRecord);
+
+                transaction.Amount_paid_dollars = remainingAmount.ToString();
+
+
+
+                return CreateOrUpdate(transaction); ; 
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public bool CreateOrUpdate(Transaction transaction)
+        {
+            try
+            {
+                var retrieveOperation = TableOperation.Retrieve<Transaction>(transaction.PartitionKey, transaction.RowKey);
+                var retrieveResult = _table.Execute(retrieveOperation);
+                var existingEntity = (Transaction)retrieveResult.Result;
+
+                if (existingEntity != null)
+                {
+                    existingEntity.Amount_paid_dollars = transaction.Amount_paid_dollars;
+                    existingEntity.Date_and_time = transaction.Date_and_time;
+
+                    var updateOperation = TableOperation.Replace(existingEntity);
+                    _table.Execute(updateOperation);
+                }
+                else
+                {
+                    var insertOperation = TableOperation.Insert(transaction);
+                    _table.Execute(insertOperation);
+                }
 
                 return true;
             }
             catch (Exception)
             {
-                return false;
+                return false; 
+            }
+        }
+
+
+        public async Task<decimal> GetTodaysCurrencyValue(string currency)
+        {
+            string url = "https://currency-exchange-api-six.vercel.app/api/v2/currencies/today";
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+                try
+                {
+                    ServicePointManager.Expect100Continue = true;
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    var exchangeRates = await response.Content.ReadAsStringAsync(); // Read the response as string
+                    JObject ratesObject = JObject.Parse(exchangeRates); // Parse JSON string to JObject
+
+                    // Get the value corresponding to the currency key
+                    decimal currencyValue = (decimal)ratesObject["rates"][currency];
+
+                    return currencyValue;
+
+                    // If currency not found, throw an exception or return a default value
+                   // throw new KeyNotFoundException($"Currency value for {currency} not found in the response.");
+                }
+                catch (HttpRequestException httpRequestException)
+                {
+                    // Log detailed HttpRequestException
+                    if (httpRequestException.InnerException != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Inner Exception: {httpRequestException.InnerException.Message}");
+                    }
+                    System.Diagnostics.Debug.WriteLine($"HttpRequestException: {httpRequestException.Message}");
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // Log detailed Exception
+                    System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
+                    throw;
+                }
             }
         }
 
@@ -113,7 +222,7 @@ namespace PortfolioService.Repository
             }
         }
 
-
+        
         public List<Transaction> GetCryptoCurrenciesByUser(string userId, bool isYesterday)
         {
             try
@@ -134,23 +243,8 @@ namespace PortfolioService.Repository
                 {
                     decimal totalAmount = transactionGroup.TotalAmount;
 
-                    // Convert to euros
-                    //totalAmount = convert_currency(totalAmount, "USD", "EUR");
-
-                    //// Convert to cryptocurrency (if needed)
-                    //if (!isYesterday)
-                    //{
-                    //    totalAmount = convert_crypto_currency(totalAmount, transactionGroup.Currency);
-                    //}
-                    //else
-                    //{
-                    //    totalAmount = convert_crypto_currency_yesterday(totalAmount, transactionGroup.Currency);
-                    //}
-
-                    // Get difference from another source
                     var difference = _diffRepository.GetDifferenceByUserIdCurrency(userId, transactionGroup.Currency);
 
-                    // Create a transaction object for the portfolio
                     var portfolioTransaction = new Transaction
                     {
                         Currency = transactionGroup.Currency,
@@ -175,7 +269,6 @@ namespace PortfolioService.Repository
         {
             try
             {
-                // Create a table query to find the transaction with the given ID
                 var query = new TableQuery<Transaction>().Where(
                     TableQuery.GenerateFilterConditionForGuid("Id", QueryComparisons.Equal, transactionId));
 
@@ -183,11 +276,10 @@ namespace PortfolioService.Repository
 
                 if (result == null)
                 {
-                    // Transaction with the given ID not found
+                   
                     return false;
                 }
 
-                // Create a delete operation for the found transaction
                 var deleteOperation = TableOperation.Delete(result);
                 _table.Execute(deleteOperation);
 

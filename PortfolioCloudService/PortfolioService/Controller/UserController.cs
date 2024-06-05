@@ -152,7 +152,7 @@ namespace PortfolioService.Controller
         {
             try
             {
-                string email = data.email; // Extract email from JSON object
+                string email = data.email;
                 User user = repository.RetrieveUser(email);
                 return Ok(user);
             }

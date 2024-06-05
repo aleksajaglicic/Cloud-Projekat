@@ -1,16 +1,18 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
+using System.Text;
 using System.Threading.Tasks;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        string healthMonitoringServiceUrl = "http://127.0.0.1:10401/health-check"; // Update with the actual endpoint of the health monitoring system
-        string failedHealthCheckEmailsUrl = "http://127.0.0.1:10401/api/users/failedHealthCheckEmails";
+        string receiveEmailsEndpoint = "http://127.0.0.1:10800/api/User/get";
+        string sendEmailsEndpoint = "http://127.0.0.1:5000/api/sendEmails";
 
         HttpClient httpClient = new HttpClient();
 
@@ -18,89 +20,76 @@ class Program
         {
             try
             {
-                HttpResponseMessage response = await httpClient.GetAsync(healthMonitoringServiceUrl);
-                response.EnsureSuccessStatusCode(); // Throws exception if not successful
+                HttpResponseMessage response = await httpClient.GetAsync(receiveEmailsEndpoint);
 
-                string result = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Health Check Result: {result}");
-
-                if (result != "OK")
+                if (response.IsSuccessStatusCode)
                 {
-                    List<string> failedHealthCheckEmails = await GetFailedHealthCheckEmails(httpClient, failedHealthCheckEmailsUrl);
-                    foreach (var email in failedHealthCheckEmails)
+                    string jsonData = await response.Content.ReadAsStringAsync();
+
+                    List<string> emails = JsonConvert.DeserializeObject<List<string>>(jsonData);
+
+                    foreach (var email in emails)
                     {
-                        SendEmail(email, "FAIL - Health Check", "The HealthCheck for the Portfolio Service has failed.");
+                        Console.WriteLine($"Sending email to: {email}");
+                        SendEmail(email, "Subject", "Body");
                     }
+
+                    await SendProcessedEmails(httpClient, sendEmailsEndpoint, emails);
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to receive data. Status code: {response.StatusCode}");
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching health check results: {ex.Message}");
+                Console.WriteLine($"An error occurred while receiving data: {ex.Message}");
             }
 
-            // Wait for a few seconds before the next health check
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(10));
         }
     }
 
-    public static async Task<List<string>> GetFailedHealthCheckEmails(HttpClient httpClient, string url)
+    static async Task SendProcessedEmails(HttpClient httpClient, string endpoint, List<string> emails)
     {
         try
         {
-            HttpResponseMessage response = await httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode(); // Throws exception if not successful
+            string jsonData = JsonConvert.SerializeObject(emails);
 
-            // Read the response content as a string
-            string content = await response.Content.ReadAsStringAsync();
+            var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-            // Parse the content as a list of strings (assuming each string represents an email)
-            List<string> emails = ParseEmails(content);
+            HttpResponseMessage response = await httpClient.PostAsync(endpoint, content);
 
-            // Return the list of emails
-            return emails;
-        }
-        catch (HttpRequestException ex)
-        {
-            // Log any HTTP request exceptions
-            Console.WriteLine($"HTTP request error: {ex.Message}");
-            throw; // Rethrow the exception to handle it at a higher level if necessary
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Processed emails sent successfully.");
+            }
+            else
+            {
+                Console.WriteLine($"Failed to send processed emails. Status code: {response.StatusCode}");
+            }
         }
         catch (Exception ex)
         {
-            // Log any other exceptions that occur
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            throw; // Rethrow the exception to handle it at a higher level if necessary
+            Console.WriteLine($"An error occurred while sending processed emails: {ex.Message}");
         }
-    }
-
-    private static List<string> ParseEmails(string content)
-    {
-        // Implement logic to parse the content string and extract email addresses
-        // Here's a placeholder implementation assuming the content is a comma-separated list of emails
-        string[] emailArray = content.Split(',');
-        List<string> emails = new List<string>(emailArray);
-        return emails;
     }
 
     static void SendEmail(string recipient, string subject, string body)
     {
-        // Set up the SMTP client
         using (SmtpClient smtpClient = new SmtpClient("smtp.gmail.com"))
         {
             smtpClient.Port = 587;
             smtpClient.Credentials = new NetworkCredential("aleksajaglicic070@gmail.com", "mdfn geem ogav qsue");
             smtpClient.EnableSsl = true;
 
-            // Create the email message
             MailMessage message = new MailMessage();
             message.From = new MailAddress("aleksajaglicic@gmail.com");
             message.To.Add(new MailAddress(recipient));
             message.Subject = subject;
             message.Body = body;
 
-            // Send the email
             smtpClient.Send(message);
         }
     }
-
 }

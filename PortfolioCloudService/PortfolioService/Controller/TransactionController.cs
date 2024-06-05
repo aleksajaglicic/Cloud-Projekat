@@ -48,12 +48,11 @@ namespace PortfolioService.Controller
                     HttpResponseMessage response = await client.GetAsync(url);
                     response.EnsureSuccessStatusCode();
 
-                    var exchangeRates = await response.Content.ReadAsAsync<object>(); // Replace 'object' with a specific model if available
+                    var exchangeRates = await response.Content.ReadAsAsync<object>();
                     return Ok(exchangeRates);
                 }
                 catch (HttpRequestException httpRequestException)
                 {
-                    // Log detailed HttpRequestException
                     if (httpRequestException.InnerException != null)
                     {
                         System.Diagnostics.Debug.WriteLine($"Inner Exception: {httpRequestException.InnerException.Message}");
@@ -63,7 +62,6 @@ namespace PortfolioService.Controller
                 }
                 catch (Exception ex)
                 {
-                    // Log detailed Exception
                     System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
                     return InternalServerError(ex);
                 }
@@ -148,7 +146,7 @@ namespace PortfolioService.Controller
                 }
                 else
                 {
-                    return NotFound(); // Return 404 if the transaction with the specified ID was not found
+                    return NotFound();
                 }
             }
             catch (Exception)

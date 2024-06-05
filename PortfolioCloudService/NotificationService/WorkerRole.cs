@@ -1,14 +1,18 @@
 using Common;
+using Microsoft.Owin.Hosting;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
+using NotificationService.Implementation;
+using PortfolioService.Repository;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Mail;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,6 +24,7 @@ namespace NotificationService
         private readonly ManualResetEvent runCompleteEvent = new ManualResetEvent(false);
         private Timer timer;
         private CloudQueue alarmsDoneQueue;
+        private IDisposable _app = null;
 
         public override void Run()
         {
@@ -30,37 +35,27 @@ namespace NotificationService
             alarmsDoneQueue = queueClient.GetQueueReference("alarmsdone");
             alarmsDoneQueue.CreateIfNotExists();
 
-            // Initialize and start the timer
             timer = new Timer(SendNotifications, null, TimeSpan.Zero, TimeSpan.FromSeconds(10));
 
             while (true)
             {
-                Thread.Sleep(10000); // Sleep to prevent the thread from exiting
+                Thread.Sleep(10000);
             }
 
-            //try
-            //{
-            //    this.RunAsync(this.cancellationTokenSource.Token).Wait();
-            //}
-            //finally
-            //{
-            //    this.runCompleteEvent.Set();
-            //}
         }
 
         public override bool OnStart()
         {
-            // Set the maximum number of concurrent connections
             ServicePointManager.DefaultConnectionLimit = 12;
+
+            var endpoint = RoleEnvironment.CurrentRoleInstance.InstanceEndpoints["InputData"];
+            string baseUri = $"{endpoint.Protocol}://{endpoint.IPEndpoint}";
 
             // For information on handling configuration changes
             // see the MSDN topic at https://go.microsoft.com/fwlink/?LinkId=166357.
 
-            bool result = base.OnStart();
-
-            Trace.TraceInformation("NotificationService has been started");
-
-            return result;
+            _app = WebApp.Start<Startup>(new StartOptions(url: baseUri));
+            return base.OnStart();
         }
 
         public override void OnStop()
@@ -87,40 +82,42 @@ namespace NotificationService
 
         private void SendNotifications(object state)
         {
-            // Retrieve up to 20 alarms and check if desired profit is reached
-            // If reached, send emails to subscribed users
-            // Dummy implementation for demonstration purposes
+            // Define your SMTP server settings
+            string smtpServer = "smtp.gmail.com";
+            int smtpPort = 587; // Gmail SMTP port
 
-            // Simulate sending notification emails
-            for (int i = 1; i <= 20; i++)
+            // Specify sender credentials
+            string senderEmail = "aleksajaglicic070@gmail.com";
+            string senderPassword = "mdfn geem ogav qsue";
+
+            using (SmtpClient smtpClient = new SmtpClient(smtpServer, smtpPort))
             {
-                //if (i % 5 == 0) // Example condition for reaching desired profit
-                //{
-                //    // Send email notifications
-                //    string userEmail = $"user{i}@example.com";
-                //    EmailService.SendEmail(userEmail, "Profit Alert", $"Congratulations! Your desired profit is reached.");
-                //}
-                
+                smtpClient.UseDefaultCredentials = false;
+                smtpClient.Credentials = new NetworkCredential(senderEmail, senderPassword);
+                smtpClient.EnableSsl = true;
 
+                for (int i = 1; i <= 20; i++)
+                {
+                    if (i % 5 == 0)
+                    {
+                        UserDataRepository userDataRepository = new UserDataRepository();
+                        List<string> failedHealthCheckEmails = userDataRepository.GetFailedHealthCheckEmails();
+                        foreach (var email in failedHealthCheckEmails)
+                        {
+                            MailMessage message = new MailMessage(senderEmail, email, "Profit Alert", "Congratulations! Your desired profit is reached.");
 
-
-                //Ako je profit dobar
-                // salji email
-            }
-
-            // After sending notifications, send information to the alarmsdone queue
-            SendToAlarmsDoneQueue();
-        }
-
-        private void SendToAlarmsDoneQueue()
-        {
-            // Send information about completed alarms to the alarmsdone queue
-            // Dummy implementation for demonstration purposes
-            for (int i = 1; i <= 20; i++)
-            {
-                string alarmId = $"alarm{i}";
-                CloudQueueMessage message = new CloudQueueMessage(alarmId);
-                alarmsDoneQueue.AddMessage(message);
+                            try
+                            {
+                                smtpClient.SendMailAsync(message);
+                                Console.WriteLine($"Email sent to: {email}");
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Failed to send email to {email}: {ex.Message}");
+                            }
+                        }
+                    }
+                }
             }
         }
     }

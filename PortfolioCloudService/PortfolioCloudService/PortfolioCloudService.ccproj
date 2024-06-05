@@ -46,6 +46,14 @@
       <RoleName>HealthMonitoringService</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
+    <ProjectReference Include="..\HealthStatusService\HealthStatusService.csproj">
+      <Name>HealthStatusService</Name>
+      <Project>{6cd16ff0-28cd-4e56-9306-90fa26a30add}</Project>
+      <Private>True</Private>
+      <RoleType>Web</RoleType>
+      <RoleName>HealthStatusService</RoleName>
+      <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
+    </ProjectReference>
     <ProjectReference Include="..\ImageConverter\ImageConverter.csproj">
       <Name>ImageConverter</Name>
       <Project>{d181cd51-42cc-4258-98f8-8ac2196b4f11}</Project>
@@ -73,12 +81,14 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="HealthMonitoringServiceContent\" />
+    <Folder Include="HealthStatusServiceContent\" />
     <Folder Include="ImageConverterContent\" />
     <Folder Include="NotificationServiceContent\" />
     <Folder Include="PortfolioServiceContent\" />
   </ItemGroup>
   <ItemGroup>
     <DiagnosticsConfiguration Include="HealthMonitoringServiceContent\diagnostics.wadcfgx" />
+    <DiagnosticsConfiguration Include="HealthStatusServiceContent\diagnostics.wadcfgx" />
     <DiagnosticsConfiguration Include="ImageConverterContent\diagnostics.wadcfgx" />
     <DiagnosticsConfiguration Include="NotificationServiceContent\diagnostics.wadcfgx" />
     <DiagnosticsConfiguration Include="PortfolioServiceContent\diagnostics.wadcfgx" />

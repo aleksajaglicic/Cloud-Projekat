@@ -40,7 +40,7 @@ namespace PortfolioService
             }
             else if (transaction.Type == TypeTransaction.SOLD)
             {
-                return double.Parse(transaction.Amount_paid_dollars); // For sold transactions, profit is the amount sold
+                return double.Parse(transaction.Amount_paid_dollars);
             }
 
             return 0;

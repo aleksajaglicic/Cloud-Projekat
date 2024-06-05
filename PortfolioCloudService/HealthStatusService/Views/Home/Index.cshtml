@@ -1,0 +1,14 @@
+﻿@{
+    ViewBag.Title = "Health Status";
+}
+
+<h2>Health Status</h2>
+
+@if (ViewBag.UptimePercentage != null)
+{
+    <p>Uptime Percentage: @ViewBag.UptimePercentage.ToString("0.00")%</p>
+}
+else
+{
+    <p>No health check data available.</p>
+}

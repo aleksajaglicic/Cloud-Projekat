@@ -7,7 +7,6 @@
     </ConfigurationSettings>
     <Endpoints>
       <InputEndpoint name="InputData" protocol="http" port="10100" />
-      <InputEndpoint name="health-monitoring" protocol="http" port="10200" />
     </Endpoints>
   </WorkerRole>
   <WorkerRole name="NotificationService" vmsize="Standard_D1_v2">
@@ -16,7 +15,7 @@
       <Setting name="DataConnectionString" />
     </ConfigurationSettings>
     <Endpoints>
-      <InputEndpoint name="health-monitoring" protocol="http" port="10300" />
+      <InputEndpoint name="InputData" protocol="http" port="10200" />
     </Endpoints>
   </WorkerRole>
   <WorkerRole name="HealthMonitoringService" vmsize="Standard_D1_v2">
@@ -25,7 +24,7 @@
       <Setting name="DataConnectionString" />
     </ConfigurationSettings>
     <Endpoints>
-      <InputEndpoint name="health-check" protocol="http" port="10400" />
+      <InputEndpoint name="InputDataD" protocol="http" port="10800" />
     </Endpoints>
   </WorkerRole>
   <WorkerRole name="ImageConverter" vmsize="Standard_D1_v2">
@@ -34,4 +33,20 @@
       <Setting name="DataConnectionString" />
     </ConfigurationSettings>
   </WorkerRole>
+  <WebRole name="HealthStatusService" vmsize="Standard_D1_v2">
+    <Sites>
+      <Site name="Web">
+        <Bindings>
+          <Binding name="Endpoint1" endpointName="Endpoint1" />
+        </Bindings>
+      </Site>
+    </Sites>
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
+      <Setting name="DataConnectionString" />
+    </ConfigurationSettings>
+    <Endpoints>
+      <InputEndpoint name="Endpoint1" protocol="http" port="80" />
+    </Endpoints>
+  </WebRole>
 </ServiceDefinition>

@@ -46,7 +46,6 @@ namespace PortfolioService.Controller
                     var userId = profit.User_id;
                     decimal netWorth = 0.0M;
 
-                    //var transactions = _transactionController.GetTransactionByUser(userId);
                     var transactions = _transactionRepository.GetTransactionByUser(userId);
 
                     if (transactions != null)
@@ -75,7 +74,6 @@ namespace PortfolioService.Controller
                         string currency = todayEntry.Currency;
                         double todayAmount = (double)Decimal.Parse(todayEntry.Amount_paid_dollars);
 
-                        //decimal yesterdayAmount = userCryptoPortfolioYesterday.FirstOrDefault(x => x.Currency == currency)?.Amount_paid_dollars ?? 0.0M;
                         decimal yesterdayAmount = 0.0M;
                         
                         double difference = (double)(todayAmount - (double)yesterdayAmount);
@@ -133,8 +131,8 @@ namespace PortfolioService.Controller
 
         private double ConvertCryptoToDollars(double amount, string currency)
         {
-            // Implement crypto to dollars conversion logic here
-            return amount; // Placeholder implementation
+
+            return amount;
         }
     }
 }
