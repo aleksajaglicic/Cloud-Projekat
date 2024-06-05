@@ -1,4 +1,5 @@
 ﻿using PortfolioService.Model;
+using PortfolioService.Repository;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,18 +12,29 @@ namespace PortfolioService.Controller
     [RoutePrefix("api/DiffInWorth")]
     public class DifferenceInWorthController : ApiController
     {
-        [HttpPost]
-        [Route("create_difference")]
-        public bool CreateDifference(DifferenceInWorth difference)
-        {
-            return true;
-        }
+        private DifferenceInWorthRepository _repository = new DifferenceInWorthRepository();
 
         [HttpPost]
-        [Route("get_difference_by_user_id_currency")]
-        public bool GetDifferenceByUserIdCurrency(string user_id, string currency)
+        [Route("create_difference")]
+        public IHttpActionResult CreateDifference(DifferenceInWorth difference)
         {
-            return true;
+            bool success = _repository.CreateDifferenceEntry(difference);
+            if (success)
+            {
+                return Ok("Difference entry created successfully");
+            }
+            else
+            {
+                return InternalServerError();
+            }
+        }
+
+        [HttpGet]
+        [Route("get_difference_by_user_id_currency")]
+        public IHttpActionResult GetDifferenceByUserIdCurrency(string user_id, string currency)
+        {
+            decimal difference = _repository.GetDifferenceByUserIdCurrency(user_id, currency);
+            return Ok(difference);
         }
     }
 }

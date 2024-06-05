@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using PortfolioService.Model;
+using System.Diagnostics;
 
 namespace PortfolioService.Repository
 {
@@ -32,9 +33,41 @@ namespace PortfolioService.Repository
             _table.CreateIfNotExists();
         }
 
-        public void CreateDifferenceEntry(DifferenceInWorth differenceInWorth)
+        public bool CreateDifferenceEntry(DifferenceInWorth differenceInWorth)
         {
+            try
+            {
+                var insertOperation = TableOperation.InsertOrMerge(differenceInWorth);
+                _table.Execute(insertOperation);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
 
+        public decimal GetDifferenceByUserIdCurrency(string userId, string currency)
+        {
+            try
+            {
+                var query = new TableQuery<DifferenceInWorth>()
+                    .Where(TableQuery.CombineFilters(
+                        TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, userId),
+                        TableOperators.And,
+                        TableQuery.GenerateFilterCondition("Currency", QueryComparisons.Equal, currency)));
+
+                //var result = null; /*_table.ExecuteQuery(query).FirstOrDefault();*/
+
+                //return result != null ? result.Difference : 0.0m;
+                return 0.0M;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception
+                Trace.TraceError($"Error retrieving difference entry: {ex.Message}");
+                return 0.0m;
+            }
         }
     }
 }

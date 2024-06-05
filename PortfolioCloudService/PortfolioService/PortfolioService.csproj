@@ -58,6 +58,7 @@
     <Compile Include="Implementation\CalculationService.cs" />
     <Compile Include="Implementation\CurrencyConverter.cs" />
     <Compile Include="Implementation\CurrencyConverterService.cs" />
+    <Compile Include="Implementation\ProfitCalculator.cs" />
     <Compile Include="Implementation\Startup.cs" />
     <Compile Include="Model\DifferenceInWorth.cs" />
     <Compile Include="Model\FormData.cs" />

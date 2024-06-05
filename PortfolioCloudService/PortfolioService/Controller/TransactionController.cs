@@ -20,7 +20,7 @@ namespace PortfolioService.Controller
         [Route("create")]
         public IHttpActionResult CreateCrypto(Transaction transaction)
         {
-            if(transactionRepository.Create(transaction))
+            if (transactionRepository.Create(transaction))
             {
                 return Ok("Successfully created transaction");
             }
@@ -31,7 +31,7 @@ namespace PortfolioService.Controller
         }
 
         [HttpGet]
-        [Route("get_rates")]  // Ensure the correct route
+        [Route("get_rates")]
         public async Task<IHttpActionResult> GetCurrencyRates()
         {
             string url = "https://currency-exchange-api-six.vercel.app/api/v2/currencies/today";
@@ -100,8 +100,9 @@ namespace PortfolioService.Controller
 
         [HttpPost]
         [Route("get_transaction_by_user")]
-        public IHttpActionResult GetTransactionByUser(string user_id)
+        public IHttpActionResult GetTransactionByUser([FromBody] dynamic data)
         {
+            string user_id = data.user_id;
             List<Transaction> transactions = transactionRepository.GetTransactionByUser(user_id);
             if (transactions != null)
             {
@@ -112,6 +113,7 @@ namespace PortfolioService.Controller
                 return InternalServerError();
             }
         }
+
 
         [HttpPost]
         [Route("get_crypto_currencies_by_user")]
@@ -130,17 +132,31 @@ namespace PortfolioService.Controller
 
         [HttpPost]
         [Route("delete_by_id")]
-        public IHttpActionResult DeleteById(string id)
+        public IHttpActionResult DeleteById([FromBody] dynamic data)
         {
-            if (transactionRepository.DeleteTransactionById(id))
+            try
             {
-                return Ok("Successfully deleted transaction");
+                string transactionIdString = data.transaction_id;
+                if (!Guid.TryParse(transactionIdString, out Guid transactionId))
+                {
+                    return BadRequest("Invalid transaction ID format");
+                }
+
+                if (transactionRepository.DeleteTransactionById(transactionId))
+                {
+                    return Ok("Successfully deleted transaction");
+                }
+                else
+                {
+                    return NotFound(); // Return 404 if the transaction with the specified ID was not found
+                }
             }
-            else
+            catch (Exception)
             {
                 return InternalServerError();
             }
         }
+
 
         [HttpPost]
         [Route("find_max_id")]

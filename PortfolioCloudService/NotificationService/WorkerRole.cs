@@ -94,12 +94,18 @@ namespace NotificationService
             // Simulate sending notification emails
             for (int i = 1; i <= 20; i++)
             {
-                if (i % 5 == 0) // Example condition for reaching desired profit
-                {
-                    // Send email notifications
-                    string userEmail = $"user{i}@example.com";
-                    EmailService.SendEmail(userEmail, "Profit Alert", $"Congratulations! Your desired profit is reached.");
-                }
+                //if (i % 5 == 0) // Example condition for reaching desired profit
+                //{
+                //    // Send email notifications
+                //    string userEmail = $"user{i}@example.com";
+                //    EmailService.SendEmail(userEmail, "Profit Alert", $"Congratulations! Your desired profit is reached.");
+                //}
+                
+
+
+
+                //Ako je profit dobar
+                // salji email
             }
 
             // After sending notifications, send information to the alarmsdone queue

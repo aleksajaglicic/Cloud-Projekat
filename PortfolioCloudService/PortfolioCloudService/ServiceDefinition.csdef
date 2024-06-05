@@ -24,6 +24,9 @@
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" />
       <Setting name="DataConnectionString" />
     </ConfigurationSettings>
+    <Endpoints>
+      <InputEndpoint name="health-check" protocol="http" port="10400" />
+    </Endpoints>
   </WorkerRole>
   <WorkerRole name="ImageConverter" vmsize="Standard_D1_v2">
     <ConfigurationSettings>

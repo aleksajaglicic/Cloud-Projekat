@@ -55,11 +55,11 @@ namespace PortfolioService.Controller
                         {
                             if (transaction.Type == TypeTransaction.BOUGHT)
                             {
-                                netWorth += transaction.Amount_paid_dollars;
+                                netWorth += Decimal.Parse(transaction.Amount_paid_dollars);
                             }
                             else
                             {
-                                netWorth -= transaction.Amount_paid_dollars;
+                                netWorth -= Decimal.Parse(transaction.Amount_paid_dollars);
                             }
                         }
                     }
@@ -73,9 +73,11 @@ namespace PortfolioService.Controller
                     foreach (var todayEntry in userCryptoPortfolioToday)
                     {
                         string currency = todayEntry.Currency;
-                        double todayAmount = (double)todayEntry.Amount_paid_dollars;
+                        double todayAmount = (double)Decimal.Parse(todayEntry.Amount_paid_dollars);
 
-                        decimal yesterdayAmount = userCryptoPortfolioYesterday.FirstOrDefault(x => x.Currency == currency)?.Amount_paid_dollars ?? 0.0M;
+                        //decimal yesterdayAmount = userCryptoPortfolioYesterday.FirstOrDefault(x => x.Currency == currency)?.Amount_paid_dollars ?? 0.0M;
+                        decimal yesterdayAmount = 0.0M;
+                        
                         double difference = (double)(todayAmount - (double)yesterdayAmount);
 
                         totalValueYesterday += ConvertCryptoToDollars((double)yesterdayAmount, currency);
@@ -106,7 +108,7 @@ namespace PortfolioService.Controller
                 return InternalServerError(ex);
             }
         }
-
+        // http://127.0.0.1:10100/api/Crypto/get_transaction_by_user
         [HttpPost]
         [Route("get_summary_by_user_id")]
         public IHttpActionResult GetSummaryByUserId(string userId)

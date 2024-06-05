@@ -9,11 +9,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using PortfolioService.Model;
+using System.Diagnostics;
 
 namespace PortfolioService.Repository
 {
     public class TransactionRepository
     {
+        private DifferenceInWorthRepository _diffRepository = new DifferenceInWorthRepository();
         private CloudStorageAccount _storageAccount;
         private CloudTable _table;
 
@@ -36,6 +38,9 @@ namespace PortfolioService.Repository
         {
             try
             {
+                transaction.RowKey = transaction.User_id;
+                transaction.PartitionKey = "Transaction";
+                transaction.Id = Guid.NewGuid();
                 var insertOperation = TableOperation.Insert(transaction);
                 _table.Execute(insertOperation);
                 return true;
@@ -91,24 +96,73 @@ namespace PortfolioService.Repository
         {
             try
             {
-                var query = new TableQuery<Transaction>().Where(
-                    TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, userId));
+                var partitionKeyCondition = TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, "Transaction");
+                var rowKeyCondition = TableQuery.GenerateFilterCondition("RowKey", QueryComparisons.Equal, userId);
+                var combinedCondition = TableQuery.CombineFilters(partitionKeyCondition, TableOperators.And, rowKeyCondition);
+
+                var query = new TableQuery<Transaction>().Where(combinedCondition);
 
                 var transactions = _table.ExecuteQuery(query).ToList();
                 return transactions;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // Log the exception
+                Trace.TraceError($"Error retrieving transactions for user {userId}: {ex.Message}");
                 return null;
             }
         }
+
 
         public List<Transaction> GetCryptoCurrenciesByUser(string userId, bool isYesterday)
         {
             try
             {
-                // Implement logic similar to the Python code here
-                return new List<Transaction>();
+                var transactions = _table.ExecuteQuery(new TableQuery<Transaction>()).Where(t => t.User_id == userId).ToList();
+
+                var groupedTransactions = transactions
+                    .GroupBy(t => new { t.Currency, t.Type })
+                    .Select(group => new
+                    {
+                        Currency = group.Key.Currency,
+                        Type = group.Key.Type,
+                        TotalAmount = group.Sum(t => decimal.Parse(t.Amount_paid_dollars))
+                    });
+
+                var portfolio = new List<Transaction>();
+                foreach (var transactionGroup in groupedTransactions)
+                {
+                    decimal totalAmount = transactionGroup.TotalAmount;
+
+                    // Convert to euros
+                    //totalAmount = convert_currency(totalAmount, "USD", "EUR");
+
+                    //// Convert to cryptocurrency (if needed)
+                    //if (!isYesterday)
+                    //{
+                    //    totalAmount = convert_crypto_currency(totalAmount, transactionGroup.Currency);
+                    //}
+                    //else
+                    //{
+                    //    totalAmount = convert_crypto_currency_yesterday(totalAmount, transactionGroup.Currency);
+                    //}
+
+                    // Get difference from another source
+                    var difference = _diffRepository.GetDifferenceByUserIdCurrency(userId, transactionGroup.Currency);
+
+                    // Create a transaction object for the portfolio
+                    var portfolioTransaction = new Transaction
+                    {
+                        Currency = transactionGroup.Currency,
+                        Amount_paid_dollars = totalAmount.ToString(),
+                        Type = transactionGroup.Type,
+                        
+                    };
+
+                    portfolio.Add(portfolioTransaction);
+                }
+
+                return portfolio;
             }
             catch (Exception)
             {
@@ -116,21 +170,27 @@ namespace PortfolioService.Repository
             }
         }
 
-        public bool DeleteTransactionById(string transactionId)
+
+        public bool DeleteTransactionById(Guid transactionId)
         {
             try
             {
-                var retrieveOperation = TableOperation.Retrieve<Transaction>(transactionId, transactionId);
-                var result = _table.Execute(retrieveOperation);
-                var transaction = result.Result as Transaction;
+                // Create a table query to find the transaction with the given ID
+                var query = new TableQuery<Transaction>().Where(
+                    TableQuery.GenerateFilterConditionForGuid("Id", QueryComparisons.Equal, transactionId));
 
-                if (transaction == null)
+                var result = _table.ExecuteQuery(query).FirstOrDefault();
+
+                if (result == null)
                 {
+                    // Transaction with the given ID not found
                     return false;
                 }
 
-                var deleteOperation = TableOperation.Delete(transaction);
+                // Create a delete operation for the found transaction
+                var deleteOperation = TableOperation.Delete(result);
                 _table.Execute(deleteOperation);
+
                 return true;
             }
             catch (Exception)
@@ -138,6 +198,7 @@ namespace PortfolioService.Repository
                 return false;
             }
         }
+
 
         public int FindMaxId()
         {

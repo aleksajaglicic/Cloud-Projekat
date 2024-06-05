@@ -29,7 +29,7 @@ namespace PortfolioService.Controller
                 User _user = repository.RetrieveUser(user.Email);
                 if(_user != null)
                 {
-                    repository.UpdateUser(_user);
+                    repository.UpdateUser(user);
                 }
 
                 return Ok("Successfully changed user.");
@@ -69,7 +69,7 @@ namespace PortfolioService.Controller
 
                 var fileContent = provider.FileData.First();
                 var tempPath = fileContent.LocalFileName;
-
+                        
 
                 byte[] fileBytes = File.ReadAllBytes(tempPath);
 

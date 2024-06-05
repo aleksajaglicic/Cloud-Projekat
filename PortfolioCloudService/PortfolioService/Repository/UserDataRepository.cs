@@ -3,6 +3,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using PortfolioService.Model;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 
@@ -32,6 +33,16 @@ namespace PortfolioService.Repository
         public bool Exists()
         {
             return _table.Exists();
+        }
+
+        public List<string> GetFailedHealthCheckEmails()
+        {
+            var emails = _table.CreateQuery<User>()
+                             .Where(u => u.PartitionKey == "User")
+                             .Select(u => u.Email)
+                             .ToList();
+
+            return emails;
         }
 
         public IQueryable<User> RetrieveAllUsers()
@@ -66,6 +77,12 @@ namespace PortfolioService.Repository
             {
                 existingUser.FirstName = updatedUser.FirstName;
                 existingUser.LastName = updatedUser.LastName;
+                existingUser.PhoneNumber = updatedUser.PhoneNumber;
+                existingUser.Email = updatedUser.Email;
+                existingUser.Password = updatedUser.Password;
+                existingUser.City= updatedUser.City;
+                existingUser.Country = updatedUser.Country;
+                existingUser.Address = updatedUser.Address;
 
                 TableOperation updateOperation = TableOperation.Replace(existingUser);
                 _table.Execute(updateOperation);
